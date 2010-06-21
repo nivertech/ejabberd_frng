@@ -653,7 +653,7 @@ add_spool_sql(Username, XML) ->
 
 add_spool(LServer, Queries) ->
     lists:foreach(fun(Query) ->
-			  ejabberd_odbc:sql_query(LServer, Query)
+			  ejabberd_odbc:sql_query(LServer, lists:flatten(Query))
 		  end,
 		  Queries).
 
@@ -855,12 +855,8 @@ del_privacy_lists(LServer, Server, Username) ->
       ["EXECUTE dbo.del_privacy_lists @Server='", Server ,"' @username='", Username, "'"]).
 
 %% Characters to escape
-escape($\0) -> "\\0";
-escape($\t) -> "\\t";
-escape($\b) -> "\\b";
-escape($\r) -> "\\r";
-escape($')  -> "\''";
-escape($")  -> "\\\"";
+escape($\0) -> "";
+escape($')  -> "''";
 escape(C)   -> C.
 
 %% Count number of records in a table given a where clause
@@ -870,14 +866,11 @@ count_records_where(LServer, Table, WhereClause) ->
       ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
-	%ejabberd_odbc:sql_query(LServer, 
-	%	["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
 	ejabberd_odbc:sql_query(
 		LServer,
 		["EXECUTE dbo.get_roster_version '", LUser, "'"]).
 
 set_roster_version(LUser, Version) ->
-	%update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
 	ejabberd_odbc:sql_query_t(
 		["EXECUTE dbo.set_roster_version '", LUser, "' , '", Version, "'"]).
 	
