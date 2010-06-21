@@ -870,8 +870,15 @@ count_records_where(LServer, Table, WhereClause) ->
       ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
-	ejabberd_odbc:sql_query(LServer, 
-		["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
+	%ejabberd_odbc:sql_query(LServer, 
+	%	["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
+	ejabberd_odbc:sql_query(
+		LServer,
+		["EXECUTE dbo.get_roster_version '", LUser, "'"]).
+
 set_roster_version(LUser, Version) ->
-	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+	%update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+	ejabberd_odbc:sql_query_t(
+		["EXECUTE dbo.set_roster_version '", LUser, "' , '", Version, "'"]).
+	
 -endif.

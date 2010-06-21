@@ -1003,7 +1003,7 @@ record_to_string(#roster{us = {User, _Server},
 	       none	   -> "N"
 	   end,
     SAskMessage = ejabberd_odbc:escape(AskMessage),
-    [Username, SJID, Nick, SSubscription, SAsk, SAskMessage, "N", "", "item"].
+    [$', Username, "','", SJID, "','", Nick, "','", SSubscription, "','", SAsk, "','", SAskMessage, "','N','','item'"].
 
 groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
@@ -1017,7 +1017,7 @@ groups_to_string(#roster{us = {User, _Server},
       fun([], Acc) -> Acc;
 	 (Group, Acc) ->
  	      G = ejabberd_odbc:escape(Group),
-	      [[Username, SJID, G]|Acc] end, [], Groups).
+	      [[$', Username, "','", SJID, "','", G, $'] | Acc] end, [], Groups).
 
 webadmin_page(_, Host,
 	      #request{us = _US,
