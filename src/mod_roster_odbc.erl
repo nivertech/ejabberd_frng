@@ -973,10 +973,12 @@ raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	    #roster{usj = {User, LServer, LJID},
 		    us = {User, LServer},
 		    jid = LJID,
-		    name = Nick,
+		    %name = Nick,
+		    name = odbc_queries:decode(Nick), % ZVI
 		    subscription = Subscription,
 		    ask = Ask,
-		    askmessage = SAskMessage}
+		    %askmessage = SAskMessage}
+		    askmessage = odbc_queries:decode(SAskMessage)} % ZVI
     end.
 
 record_to_string(#roster{us = {User, _Server},
@@ -987,7 +989,8 @@ record_to_string(#roster{us = {User, _Server},
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
-    Nick = ejabberd_odbc:escape(Name),
+    %Nick = ejabberd_odbc:escape(Name),
+    Nick = odbc_queries:encode(Name), % ZVI - convert to BASE64
     SSubscription = case Subscription of
 			both -> "B";
 			to   -> "T";
@@ -1002,8 +1005,9 @@ record_to_string(#roster{us = {User, _Server},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
-    SAskMessage = ejabberd_odbc:escape(AskMessage),
-    [Username, SJID, Nick, SSubscription, SAsk, SAskMessage, "N", "", "item"].
+    %SAskMessage = ejabberd_odbc:escape(AskMessage),
+    SAskMessage = odbc_queries:encode(AskMessage),% ZVI - convert to BASE64
+    [$', Username, "','", SJID, "','", Nick, "','", SSubscription, "','", SAsk, "','", SAskMessage, "','N','','item'"].
 
 groups_to_string(#roster{us = {User, _Server},
 			 jid = JID,
@@ -1017,7 +1021,7 @@ groups_to_string(#roster{us = {User, _Server},
       fun([], Acc) -> Acc;
 	 (Group, Acc) ->
  	      G = ejabberd_odbc:escape(Group),
-	      [[Username, SJID, G]|Acc] end, [], Groups).
+	      [[$', Username, "','", SJID, "','", G, $'] | Acc] end, [], Groups).
 
 webadmin_page(_, Host,
 	      #request{us = _US,

@@ -80,7 +80,14 @@
 	 escape/1,
 	 count_records_where/3,
 	 get_roster_version/2,
-	 set_roster_version/2]).
+	 set_roster_version/2,
+	 %ZVI
+	 encode/1,
+	 decode/1
+	 %END ZVI
+	 ]).
+
+-include("ejabberd.hrl").
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -680,7 +687,7 @@ del_spool_msg(LServer, Username) ->
 get_roster(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.get_roster '", Username, "'"]).
+      ["EXECUTE dbo.get_roster_base64 '", Username, "'"]). %ZVI
 
 get_roster_jid_groups(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -701,7 +708,7 @@ del_user_roster_t(LServer, Username) ->
 get_roster_by_jid(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.get_roster_by_jid '", Username, "' , '", SJID, "'"]).
+      ["EXECUTE dbo.get_roster_by_jid_base64 '", Username, "' , '", SJID, "'"]). %ZVI
 
 get_rostergroup_by_jid(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -719,7 +726,7 @@ del_roster_sql(Username, SJID) ->
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
     Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "' "],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
-    Query2 = ["EXECUTE dbo.add_roster_user ", ItemVals],
+    Query2 = ["EXECUTE dbo.add_roster_user_base64 ", ItemVals], %ZVI
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query2)),
     Query3 = ["EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "' "],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query3)),
@@ -734,7 +741,7 @@ update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
      "EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "' ",
-     "EXECUTE dbo.add_roster_user ", ItemVals, " "] ++
+     "EXECUTE dbo.add_roster_user_base64 ", ItemVals, " "] ++   %ZVI
 	[lists:flatten("EXECUTE dbo.add_roster_group ", ItemGroup, " ")
 	 || ItemGroup <- ItemGroups] ++
 	["COMMIT"].
@@ -742,7 +749,7 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
 roster_subscribe(LServer, _Username, _SJID, ItemVals) ->
     catch ejabberd_odbc:sql_query(
 	    LServer,
-	    ["EXECUTE dbo.add_roster_user ", ItemVals]).
+	    ["EXECUTE dbo.add_roster_user_base64 ", ItemVals]). %ZVI
 
 get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -771,15 +778,16 @@ set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN, SFamily, SGiven,
 	  SLBDay, SLCTRY, SLEMail, SLFN, SLFamily, SLGiven, SLLocality,
 	  SLMiddle, SLNickname, SLOrgName, SLOrgUnit, SLocality, SMiddle,
 	  SNickname, SOrgName, SOrgUnit, SVCARD, Username) ->
-    ejabberd_odbc:sql_query(
-      LServer,
-      ["EXECUTE dbo.set_vcard '", SVCARD, "' , '", Username, "' , '", LUsername, "' , '",
+		
+	Query = ["EXECUTE dbo.set_vcard '", SVCARD, "' , '", Username, "' , '", LUsername, "' , '",
        SFN, "' , '", SLFN, "' , '", SFamily, "' , '", SLFamily, "' , '",
        SGiven, "' , '", SLGiven, "' , '", SMiddle, "' , '", SLMiddle, "' , '",
        SNickname, "' , '", SLNickname, "' , '", SBDay, "' , '", SLBDay, "' , '",
        SCTRY, "' , '", SLCTRY, "' , '", SLocality, "' , '", SLLocality, "' , '",
        SEMail, "' , '", SLEMail, "' , '", SOrgName, "' , '", SLOrgName, "' , '",
-       SOrgUnit, "' , '", SLOrgUnit, "'"]).
+       SOrgUnit, "' , '", SLOrgUnit, "'"],
+
+    	ejabberd_odbc:sql_query(LServer, Query).
 
 get_vcard(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -863,6 +871,18 @@ escape($')  -> "\''";
 escape($")  -> "\\\"";
 escape(C)   -> C.
 
+% ZVI
+encode(L) when is_list(L) ->
+    base64:encode_to_string(L).
+
+decode(L) when is_list(L) ->
+    try base64:decode_to_string(L) of 
+        X -> X
+    catch 
+        error:_Reason->L % in case of error, assume that string is not BASE64 encoded
+    end.
+% END ZVI
+
 %% Count number of records in a table given a where clause
 count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(
@@ -870,8 +890,12 @@ count_records_where(LServer, Table, WhereClause) ->
       ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
-	ejabberd_odbc:sql_query(LServer, 
-		["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
+	ejabberd_odbc:sql_query(
+		LServer,
+		["EXECUTE dbo.get_roster_version '", LUser, "'"]).
+
 set_roster_version(LUser, Version) ->
-	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+	ejabberd_odbc:sql_query_t(
+		["EXECUTE dbo.set_roster_version '", LUser, "' , '", Version, "'"]).
+	
 -endif.
