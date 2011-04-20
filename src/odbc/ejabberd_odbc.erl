@@ -94,6 +94,7 @@ start_link(Host, StartInterval) ->
 			fsm_limit_opts() ++ ?FSMOPTS).
 
 sql_query(Host, Query) ->
+    ?DEBUG("###: ejabberd_odbc:sql_query(Host,Query): ~p : ~p~n",[Host, Query]),
     sql_call(Host, {sql_query, Query}).
 
 %% SQL transaction based on a list of queries

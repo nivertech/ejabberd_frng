@@ -724,6 +724,7 @@ del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
+    ?DEBUG("###: update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ~p ~p ~p ~p ~p~n",[LServer, Username, SJID, ItemVals, ItemGroups]),
     Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "' "],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
     Query2 = ["EXECUTE dbo.add_roster_user_base64 ", ItemVals], %ZVI

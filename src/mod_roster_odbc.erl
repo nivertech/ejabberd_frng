@@ -115,6 +115,7 @@ stop(Host) ->
 
 
 process_iq(From, To, IQ) ->
+    ?DEBUG("###: process_iq(From, To, IQ) ~p ~p ~p~n", [From, To, IQ]),
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
@@ -125,6 +126,7 @@ process_iq(From, To, IQ) ->
     end.
 
 process_local_iq(From, To, #iq{type = Type} = IQ) ->
+    ?DEBUG("###: process_local_iq~n", []),
     case Type of
 	set ->
 	    process_iq_set(From, To, IQ);
@@ -176,6 +178,9 @@ roster_version(LServer ,LUser) ->
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
 %%     - the roster version from client don't match current version.
 process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
+
+    ?DEBUG("###: process_iq_get(From, To, IQ) ~p ~p ~p~n", [From, To, IQ]),
+
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
     US = {LUser, LServer},
@@ -307,13 +312,16 @@ item_to_xml(Item) ->
 
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
+    ?DEBUG("###: process_iq_set(From, To, IQ) ~p ~p ~p~n", [From, To, IQ]),
     {xmlelement, _Name, _Attrs, Els} = SubEl,
     lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
     IQ#iq{type = result, sub_el = []}.
 
 process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
+    ?DEBUG("###: process_iq_set(From, To, Attrs, Els) ~p ~p ~p ~p~n", [From, To, Attrs, Els]),
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} = From,
+    ?DEBUG("###:  JID1=~p User=~p LUser=~p LServer=~p~n", [JID1, User, LUser, LServer]),
     case JID1 of
 	error ->
 	    ok;
@@ -326,6 +334,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 			 ["username", "jid", "nick", "subscription",
 			  "ask", "askmessage", "server", "subscribe", "type"],
 			 Res} = odbc_queries:get_roster_by_jid(LServer, Username, SJID),
+            ?DEBUG("###:  Res=~p~n", [Res]),
 			Item = case Res of
 				   [] ->
 				       #roster{usj = {LUser, LServer, LJID},
@@ -369,6 +378,7 @@ process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
 		end,
 	    case odbc_queries:sql_transaction(LServer, F) of
 		{atomic, {OldItem, Item}} ->
+		    ?DEBUG("###: {OldItem, Item} ~p ~p~n", [OldItem, Item]),
 		    push_item(User, LServer, To, Item),
 		    case Item#roster.subscription of
 			remove ->
@@ -747,6 +757,7 @@ send_unsubscription_to_rosteritems(LUser, LServer) ->
 
 %% @spec (From::jid(), Item::roster()) -> ok
 send_unsubscribing_presence(From, Item) ->
+    ?DEBUG("###: send_unsubscribing_presence(From, Item) ~p ~p~n", [From, Item]),
     IsTo = case Item#roster.subscription of
 	       both -> true;
 	       to -> true;
@@ -772,6 +783,7 @@ send_unsubscribing_presence(From, Item) ->
     ok.
 
 send_presence_type(From, To, Type) ->
+    ?DEBUG("###: send_presence_type(From, To, Type) ~p ~p ~p~n", [From, To, Type]),
     ejabberd_router:route(
       From, To,
       {xmlelement, "presence",
