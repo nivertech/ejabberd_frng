@@ -96,7 +96,11 @@ start_link(Host, StartInterval) ->
 			fsm_limit_opts() ++ ?FSMOPTS).
 
 sql_query(Host, Query) ->
-    sql_call(Host, {sql_query, Query}).
+    ?DEBUG("###: >sql_query(): ~p ~p~n",[Host, Query]),
+    R = sql_call(Host, {sql_query, Query}),
+    ?DEBUG("###: >sql_query(): ~p ~p = ~p~n",[Host, Query, R]),
+    R.
+    
 
 %% SQL transaction based on a list of queries
 %% This function automatically
