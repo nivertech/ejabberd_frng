@@ -973,10 +973,10 @@ raw_to_record(LServer, {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	    #roster{usj = {User, LServer, LJID},
 		    us = {User, LServer},
 		    jid = LJID,
-		    name = Nick,
+		    name = odbc_queries:decode(Nick),
 		    subscription = Subscription,
 		    ask = Ask,
-		    askmessage = SAskMessage}
+		    askmessage = odbc_queries:decode(SAskMessage)}
     end.
 
 record_to_string(#roster{us = {User, _Server},
@@ -987,7 +987,7 @@ record_to_string(#roster{us = {User, _Server},
 			 askmessage = AskMessage}) ->
     Username = ejabberd_odbc:escape(User),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(JID))),
-    Nick = ejabberd_odbc:escape(Name),
+    Nick = odbc_queries:encode(Name),
     SSubscription = case Subscription of
 			both -> "B";
 			to   -> "T";
@@ -1002,7 +1002,7 @@ record_to_string(#roster{us = {User, _Server},
 	       in	   -> "I";
 	       none	   -> "N"
 	   end,
-    SAskMessage = ejabberd_odbc:escape(AskMessage),
+    SAskMessage = odbc_queries:encode(AskMessage),
     [Username, SJID, Nick, SSubscription, SAsk, SAskMessage, "N", "", "item"].
 
 groups_to_string(#roster{us = {User, _Server},

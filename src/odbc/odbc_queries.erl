@@ -80,7 +80,9 @@
 	 escape/1,
 	 count_records_where/3,
 	 get_roster_version/2,
-	 set_roster_version/2]).
+	 set_roster_version/2,
+     encode/1,
+     decode/1]).
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -692,7 +694,7 @@ del_spool_msg(LServer, Username) ->
 get_roster(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.get_roster '", Username, "'"]).
+      ["EXECUTE dbo.get_roster_base64 '", Username, "'"]).
 
 get_roster_jid_groups(LServer, Username) ->
     ejabberd_odbc:sql_query(
@@ -713,7 +715,7 @@ del_user_roster_t(LServer, Username) ->
 get_roster_by_jid(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
       LServer,
-      ["EXECUTE dbo.get_roster_by_jid '", Username, "' , '", SJID, "'"]).
+      ["EXECUTE dbo.get_roster_by_jid_base64 '", Username, "' , '", SJID, "'"]).
 
 get_rostergroup_by_jid(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -729,15 +731,15 @@ del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
-    Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "' "],
+    Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
-    Query2 = ["EXECUTE dbo.add_roster_user ", ItemVals],
+    Query2 = ["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals)],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query2)),
-    Query3 = ["EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "' "],
+    Query3 = ["EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "'"],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query3)),
     lists:foreach(fun(ItemGroup) ->
-			  Query = ["EXECUTE dbo.add_roster_group ",
-				   ItemGroup],
+			  Query = ["EXECUTE dbo.add_roster_group '",
+				   ItemGroup, "'"],
 			  ejabberd_odbc:sql_query(LServer,
 						  lists:flatten(Query))
 		  end,
@@ -746,15 +748,15 @@ update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
      "EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "' ",
-     "EXECUTE dbo.add_roster_user ", ItemVals, " "] ++
-	[lists:flatten("EXECUTE dbo.add_roster_group ", ItemGroup, " ")
+     "EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), " "] ++
+	[lists:flatten("EXECUTE dbo.add_roster_group '", ItemGroup, "' ")
 	 || ItemGroup <- ItemGroups] ++
 	["COMMIT"].
 
 roster_subscribe(LServer, _Username, _SJID, ItemVals) ->
     catch ejabberd_odbc:sql_query(
 	    LServer,
-	    ["EXECUTE dbo.add_roster_user ", ItemVals]).
+	    ["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals)]).
 
 get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
@@ -875,6 +877,19 @@ escape($')  -> "\''";
 escape($")  -> "\\\"";
 escape(C)   -> C.
 
+encode(L) when is_list(L) ->
+    base64:encode_to_string(L).
+
+decode(L) when is_list(L) ->
+    try base64:decode_to_string(L) of 
+        X -> X
+    catch 
+        error:_Reason -> L % in case of error, assume that string is not BASE64 encoded
+    end.
+
+quote_items(ItemVals) ->
+    lists:flatten([$', join(ItemVals, "', '"), $']).
+
 %% Count number of records in a table given a where clause
 count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(
@@ -882,8 +897,12 @@ count_records_where(LServer, Table, WhereClause) ->
       ["select count(*) from ", Table, " with (nolock) ", WhereClause]).
 
 get_roster_version(LServer, LUser) ->
-	ejabberd_odbc:sql_query(LServer, 
-		["select version from dbo.roster_version with (nolock) where username = '", LUser, "'"]).
+  ejabberd_odbc:sql_query(
+    LServer,
+    ["EXECUTE dbo.get_roster_version '", LUser, "'"]).
+
 set_roster_version(LUser, Version) ->
-	update_t("dbo.roster_version", ["username", "version"], [LUser, Version], ["username = '", LUser, "'"]).
+  ejabberd_odbc:sql_query_t(
+    ["EXECUTE dbo.set_roster_version '", LUser, "' , '", Version, "'"]).
+
 -endif.
