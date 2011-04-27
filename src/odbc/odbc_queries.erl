@@ -595,7 +595,7 @@ sql_transaction(LServer, Queries) when is_list(Queries) ->
     %% This function automatically
     F = fun() ->
     	lists:foreach(fun(Query) ->
-    		ejabberd_odbc:sql_query(LServer, Query)
+    		ejabberd_odbc:sql_query(LServer, lists:flatten(Query))
     	end, Queries)
       end,
     {atomic, catch F()};
@@ -748,16 +748,17 @@ update_roster2(LServer, Username, SJID, ItemVals, ItemGroups) ->
 		  ItemGroups).
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
-    ?DEBUG("###: update_roster():~n~p ~p ~p ~p ~p~n", [LServer, Username, SJID, ItemVals, ItemGroups]),
-    sql_transaction(LServer, update_roster_sql(Username, SJID, ItemVals, ItemGroups)).
+    ?DEBUG("###: >update_roster():~n~p ~p ~p ~p ~p~n", [LServer, Username, SJID, ItemVals, ItemGroups]),
+    R = sql_transaction(LServer, update_roster_sql(Username, SJID, ItemVals, ItemGroups)),
+    ?DEBUG("###: <update_roster~n ~p ~p ~p", [LServer, Username, SJID]),
+    R.
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
-     "EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "' ",
-     "EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), " "] ++
-	[lists:flatten("EXECUTE dbo.add_roster_group '", ItemGroup, "' ")
-	 || ItemGroup <- ItemGroups] ++
-	["COMMIT"].
+      lists:flatten("EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "' "),
+      lists:flatten("EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), " "]),
+	  [lists:flatten("EXECUTE dbo.add_roster_group '", ItemGroup, "' ") || ItemGroup <- ItemGroups],
+	  "COMMIT"].
 
 roster_subscribe(LServer, _Username, _SJID, ItemVals) ->
     catch ejabberd_odbc:sql_query(
