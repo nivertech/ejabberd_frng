@@ -84,6 +84,8 @@
      encode/1,
      decode/1]).
 
+-include("ejabberd.hrl").
+
 %% We have only two compile time options for db queries:
 %-define(generic, true).
 %-define(mssql, true).
