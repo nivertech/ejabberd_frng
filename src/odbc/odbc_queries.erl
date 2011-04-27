@@ -732,7 +732,7 @@ del_roster(LServer, Username, SJID) ->
 del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
-update_roster2(LServer, Username, SJID, ItemVals, ItemGroups) ->
+update_rosterORIG(LServer, Username, SJID, ItemVals, ItemGroups) ->
     Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
     Query2 = ["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals)],
@@ -749,9 +749,21 @@ update_roster2(LServer, Username, SJID, ItemVals, ItemGroups) ->
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
     ?DEBUG("###: >update_roster():~n~p ~p ~p ~p ~p~n", [LServer, Username, SJID, ItemVals, ItemGroups]),
-    R = sql_transaction(LServer, update_roster_sql(Username, SJID, ItemVals, ItemGroups)),
+    R = sql_transaction(LServer, update_roster_sql_TX(Username, SJID, ItemVals, ItemGroups)),
     ?DEBUG("###: <update_roster~n ~p ~p ~p", [LServer, Username, SJID]),
     R.
+
+update_roster_sql_TX(Username, SJID, ItemVals, ItemGroups) ->
+    ["BEGIN TRANSACTION ",
+        ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'; "],
+        ["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), "; "],
+        ["EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "'; "]
+    ]
+    ++
+	[   ["EXECUTE dbo.add_roster_group '", ItemGroup, "'; "] || ItemGroup <- ItemGroups]
+    ++
+	["COMMIT"].
+
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
