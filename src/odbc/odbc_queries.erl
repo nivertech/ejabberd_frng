@@ -759,7 +759,7 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
       lists:flatten(["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), ";  "])
     ]
     ++
-	[lists:flatten(["EXECUTE dbo.add_roster_group '", ItemGroup, "'; "]) || ItemGroup <- ItemGroups],
+	[lists:flatten(["EXECUTE dbo.add_roster_group '", ItemGroup, "'; "]) || ItemGroup <- ItemGroups]
     ++
 	["COMMIT"].
 
