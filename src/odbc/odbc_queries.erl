@@ -755,10 +755,13 @@ update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
-      lists:flatten(["EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "' "]),
-      lists:flatten(["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), " "]),
-	  [lists:flatten(["EXECUTE dbo.add_roster_group '", ItemGroup, "' "]) || ItemGroup <- ItemGroups],
-	  "COMMIT"].
+      lists:flatten(["EXECUTE dbo.del_roster_groups '", Username, "','", SJID, "'; "]),
+      lists:flatten(["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals), ";  "])
+    ]
+    ++
+	[lists:flatten(["EXECUTE dbo.add_roster_group '", ItemGroup, "'; "]) || ItemGroup <- ItemGroups],
+    ++
+	["COMMIT"].
 
 roster_subscribe(LServer, _Username, _SJID, ItemVals) ->
     catch ejabberd_odbc:sql_query(

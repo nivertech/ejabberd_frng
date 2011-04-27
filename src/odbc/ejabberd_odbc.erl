@@ -96,9 +96,8 @@ start_link(Host, StartInterval) ->
 			fsm_limit_opts() ++ ?FSMOPTS).
 
 sql_query(Host, Query) ->
-    ?DEBUG("###: >sql_query(): ~p ~p~n",[Host, Query]),
     R = sql_call(Host, {sql_query, Query}),
-    ?DEBUG("###: >sql_query(): ~p ~p = ~p~n",[Host, Query, R]),
+    ?DEBUG("###: sql_query(): ~p ~p = ~p~n",[Host, Query, R]),
     R.
     
 
