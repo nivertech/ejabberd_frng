@@ -730,7 +730,7 @@ del_roster(LServer, Username, SJID) ->
 del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
-update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
+update_roster2(LServer, Username, SJID, ItemVals, ItemGroups) ->
     Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"],
     ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
     Query2 = ["EXECUTE dbo.add_roster_user_base64 ", quote_items(ItemVals)],
@@ -744,6 +744,10 @@ update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
 						  lists:flatten(Query))
 		  end,
 		  ItemGroups).
+
+update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
+    ?DEBUG("###: update_roster():~n~p ~p ~p ~p ~p~n", [LServer, Username, SJID, ItemVals, ItemGroups]),
+    sql_transaction(LServer, update_roster_sql(Username, SJID, ItemVals, ItemGroups)).
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
@@ -903,6 +907,6 @@ get_roster_version(LServer, LUser) ->
 
 set_roster_version(LUser, Version) ->
   ejabberd_odbc:sql_query_t(
-    ["EXECUTE dbo.set_roster_version '", LUser, "' , '", Version, "'"]).
+    ["EXECUTE dbo.set_roster_version '", LUser, "', '", Version, "'"]).
 
 -endif.
