@@ -749,7 +749,7 @@ update_rosterORIG(LServer, Username, SJID, ItemVals, ItemGroups) ->
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
     ?DEBUG("###: >update_roster():~n~p ~p ~p ~p ~p~n", [LServer, Username, SJID, ItemVals, ItemGroups]),
-    R = sql_transaction(LServer, lists:flatten(update_roster_sql_TX(Username, SJID, ItemVals, ItemGroups)) ),
+    R = ejabberd_odbc:sql_query(LServer, lists:flatten(update_roster_sql_TX(Username, SJID, ItemVals, ItemGroups)) ),
     ?DEBUG("###: <update_roster~n ~p ~p ~p = ~p", [LServer, Username, SJID, R]),
     R.
 
