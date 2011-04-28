@@ -724,19 +724,17 @@ del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
-    Query1 = ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "' "],
-    ejabberd_odbc:sql_query(LServer, lists:flatten(Query1)),
-    Query2 = ["EXECUTE dbo.add_roster_user_base64 ", ItemVals], %ZVI
-    ejabberd_odbc:sql_query(LServer, lists:flatten(Query2)),
-    Query3 = ["EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "' "],
-    ejabberd_odbc:sql_query(LServer, lists:flatten(Query3)),
-    lists:foreach(fun(ItemGroup) ->
-			  Query = ["EXECUTE dbo.add_roster_group ",
-				   ItemGroup],
-			  ejabberd_odbc:sql_query(LServer,
-						  lists:flatten(Query))
-		  end,
-		  ItemGroups).
+    QueryTx = 
+        [
+         "BEGIN TRANSACTION ", 
+            "EXECUTE dbo.del_roster '", Username, "', '", SJID, "' ; ",
+            "EXECUTE dbo.add_roster_user_base64 ", ItemVals, " ; ",
+            "EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "' ; ",
+            [ ["EXECUTE dbo.add_roster_group ", ItemGroup, " ; "] || ItemGroup <- ItemGroups ],
+         "COMMIT"
+        ],
+    ejabberd_odbc:sql_query(LServer, lists:flatten(QueryTx)).
+
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
