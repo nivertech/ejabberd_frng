@@ -97,7 +97,7 @@ sql_query(Host, Query) ->
     Q = lists:flatten(Query),
     ?DEBUG(">sql_query(): ~p~n", [Q]),
     R = sql_call(Host, {sql_query, Q}),
-    ?DEBUG("<sql_query(): ~p = R~n", [Q, R]).
+    ?DEBUG("<sql_query(): ~p = R~n", [Q, R]),
     R.
 
 %% SQL transaction based on a list of queries
