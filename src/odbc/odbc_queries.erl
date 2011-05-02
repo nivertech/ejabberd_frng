@@ -739,10 +739,12 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
 
 roster_subscribe(LServer, Username, SJID, ItemVals) ->
      ?DEBUG(">roster_subscribe(): ~p ~p ~p~n", [Username, SJID, ItemVals]),
-   R = catch ejabberd_odbc:sql_query(
+     R = ( catch ejabberd_odbc:sql_query(
 	    LServer,
-	    ["EXECUTE dbo.add_roster_user_base64 ", ItemVals]),
-     ?DEBUG("<roster_subscribe(): ~p ~p ~p = ~p~n", [Username, SJID, ItemVals, R]).
+	    ["EXECUTE dbo.add_roster_user_base64 ", ItemVals]) 
+       ),
+     ?DEBUG("<roster_subscribe(): ~p ~p ~p = ~p~n", [Username, SJID, ItemVals, R]),
+     R.
     
 
 get_subscription(LServer, Username, SJID) ->
