@@ -556,7 +556,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "askmessage", "server", "subscribe", "type"],
 			 []} ->
-               ?DEBUG("process_subscription: no roster user!~n", [I]),
+               ?DEBUG("process_subscription: no roster user!~n", []),
 			    #roster{usj = {LUser, LServer, LJID},
 				    us = {LUser, LServer},
 				    jid = LJID}
