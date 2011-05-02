@@ -523,7 +523,7 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
 
 out_subscription(User, Server, JID, Type) ->
     ?DEBUG(">out_subscription(User, Server, JID, Type)~n~p ~p ~p ~p~n",[User, Server, JID, Type]),
-    R = process_subscription(out, User, Server, JID, Type, []).
+    R = process_subscription(out, User, Server, JID, Type, []),
     ?DEBUG("<out_subscription() = ~p~n",[R]).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
