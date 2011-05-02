@@ -517,12 +517,17 @@ ask_to_pending(Ask) -> Ask.
 
 
 in_subscription(_, User, Server, JID, Type, Reason) ->
-    process_subscription(in, User, Server, JID, Type, Reason).
+    ?DEBUG(">in_subscription(_, User, Server, JID, Type, Reason)~n~p ~p ~p ~p ~p~n",[User, Server, JID, Type, Reason]),
+    R = process_subscription(in, User, Server, JID, Type, Reason),
+    ?DEBUG("<in_subscription() = ~p~n",[R]).
 
 out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, []).
+    ?DEBUG(">out_subscription(User, Server, JID, Type)~n~p ~p ~p ~p~n",[User, Server, JID, Type]),
+    R = process_subscription(out, User, Server, JID, Type, []).
+    ?DEBUG("<out_subscription() = ~p~n",[R]).
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
+    ?DEBUG(">process_subscription(Direction, User, Server, JID1, Type, Reason):~n~p ~p ~p ~p ~p ~p~n",[Direction, User, Server, JID1, Type, Reason]),
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
     LJID = jlib:jid_tolower(JID1),
@@ -535,6 +540,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "askmessage", "server", "subscribe", "type"],
 			 [I]} ->
+                ?DEBUG("process_subscription: got roster user: ~p~n", [I]),
 			    %% raw_to_record can return error, but
 			    %% jlib_to_string would fail before this point
 			    R = raw_to_record(LServer, I),
@@ -550,6 +556,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 			 ["username", "jid", "nick", "subscription", "ask",
 			  "askmessage", "server", "subscribe", "type"],
 			 []} ->
+               ?DEBUG("process_subscription: no roster user!~n", [I]),
 			    #roster{usj = {LUser, LServer, LJID},
 				    us = {LUser, LServer},
 				    jid = LJID}
