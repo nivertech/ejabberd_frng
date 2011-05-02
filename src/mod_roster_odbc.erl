@@ -519,12 +519,14 @@ ask_to_pending(Ask) -> Ask.
 in_subscription(_, User, Server, JID, Type, Reason) ->
     ?DEBUG(">in_subscription(_, User, Server, JID, Type, Reason)~n~p ~p ~p ~p ~p~n",[User, Server, JID, Type, Reason]),
     R = process_subscription(in, User, Server, JID, Type, Reason),
-    ?DEBUG("<in_subscription() = ~p~n",[R]).
+    ?DEBUG("<in_subscription() = ~p~n",[R]),
+    R.
 
 out_subscription(User, Server, JID, Type) ->
     ?DEBUG(">out_subscription(User, Server, JID, Type)~n~p ~p ~p ~p~n",[User, Server, JID, Type]),
     R = process_subscription(out, User, Server, JID, Type, []),
-    ?DEBUG("<out_subscription() = ~p~n",[R]).
+    ?DEBUG("<out_subscription() = ~p~n",[R]),
+    R.
 
 process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     ?DEBUG(">process_subscription(Direction, User, Server, JID1, Type, Reason):~n~p ~p ~p ~p ~p ~p~n",[Direction, User, Server, JID1, Type, Reason]),
