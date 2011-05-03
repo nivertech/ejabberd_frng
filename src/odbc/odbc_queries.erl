@@ -724,17 +724,9 @@ del_roster_sql(Username, SJID) ->
     ["EXECUTE dbo.del_roster '", Username, "', '", SJID, "'"].
 
 update_roster(LServer, Username, SJID, ItemVals, ItemGroups) ->
-    QueryTx = 
-        [
-         "BEGIN TRANSACTION ", 
-            "EXECUTE dbo.del_roster '", Username, "', '", SJID, "' ; ",
-            "EXECUTE dbo.add_roster_user_base64 ", ItemVals, " ; ",
-            "EXECUTE dbo.del_roster_groups '", Username, "', '", SJID, "' ; ",
-            [ ["EXECUTE dbo.add_roster_group ", ItemGroup, " ; "] || ItemGroup <- ItemGroups ],
-         "COMMIT"
-        ],
-    ejabberd_odbc:sql_query(LServer, lists:flatten(QueryTx)).
-
+    ejabberd_odbc:sql_query(
+        LServer, 
+        lists:flatten(["EXECUTE dbo.add_roster_user_base64 ", ItemVals])).
 
 update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
     ["BEGIN TRANSACTION ",
@@ -747,7 +739,7 @@ update_roster_sql(Username, SJID, ItemVals, ItemGroups) ->
 roster_subscribe(LServer, _Username, _SJID, ItemVals) ->
     catch ejabberd_odbc:sql_query(
 	    LServer,
-	    ["EXECUTE dbo.add_roster_user_base64 ", ItemVals]). %ZVI
+	    lists:flatten(["EXECUTE dbo.add_roster_user_base64 ", ItemVals])). %ZVI
 
 get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(
