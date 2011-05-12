@@ -52,7 +52,7 @@ start(_Host) ->
     ok.
 
 plain_password_required() ->
-    false.
+    true.
 
 check_password(_User, _Server, _Password) ->
     %LUser = jlib:nodeprep(_User),
