@@ -5,7 +5,11 @@
 %%% Created : 15 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,31 +21,41 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
 -module(mod_echo).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
+
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1]).
+-export([start_link/2, start/2, stop/1,
+	 do_client_version/3]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+<<<<<<< HEAD
 
 -record(state, {host, client_version}).
+=======
+-include("logger.hrl").
+
+-include("jlib.hrl").
+
+-record(state, {host = <<"">> :: binary()}).
+>>>>>>> upstream/master
 
 -define(PROCNAME, ejabberd_mod_echo).
 
@@ -54,17 +68,13 @@
 %%--------------------------------------------------------------------
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+    gen_server:start_link({local, Proc}, ?MODULE,
+			  [Host, Opts], []).
 
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec =
-	{Proc,
-	 {?MODULE, start_link, [Host, Opts]},
-	 temporary,
-	 1000,
-	 worker,
-	 [?MODULE]},
+    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+		 temporary, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -72,7 +82,6 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
-
 
 %%====================================================================
 %% gen_server callbacks
@@ -86,8 +95,13 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
+<<<<<<< HEAD
     MyHost = gen_mod:get_opt_host(Host, Opts, "echo.@HOST@"),
     ClientVersion = gen_mod:get_opt(client_version, Opts, false),
+=======
+    MyHost = gen_mod:get_opt_host(Host, Opts,
+				  <<"echo.@HOST@">>),
+>>>>>>> upstream/master
     ejabberd_router:register_route(MyHost),
     {ok, #state{host = MyHost, client_version = ClientVersion}}.
 
@@ -109,8 +123,7 @@ handle_call(stop, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+handle_cast(_Msg, State) -> {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -119,15 +132,23 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
+<<<<<<< HEAD
 	Packet2 = case exmpp_jid:node(From) of
 		undefined -> exmpp_stanza:reply_with_error(Packet, 'bad-request');
 		_ -> Packet
 	end,
     do_client_version(State#state.client_version, To, From),
+=======
+    Packet2 = case From#jid.user of
+		<<"">> ->
+		    jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
+		_ -> Packet
+	      end,
+    do_client_version(disabled, To, From),
+>>>>>>> upstream/master
     ejabberd_router:route(To, From, Packet2),
     {noreply, State};
-handle_info(_Info, State) ->
-    {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()
@@ -137,15 +158,13 @@ handle_info(_Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
-    ejabberd_router:unregister_route(State#state.host),
-    ok.
+    ejabberd_router:unregister_route(State#state.host), ok.
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% Description: Convert process state when code is changed
 %%--------------------------------------------------------------------
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
 %% Example of routing XMPP packets using Erlang's message passing
@@ -173,6 +192,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% using exactly the same JID. We add a (mostly) random resource to
 %% try to guarantee that the received response matches the request sent.
 %% Finally, the received response is printed in the ejabberd log file.
+<<<<<<< HEAD
 do_client_version(false, _From, _To) ->
     ok;
 do_client_version(true, From, To) ->
@@ -205,3 +225,36 @@ do_client_version(true, From, To) ->
     Values_string2 = lists:concat(Values_string1),
     ?INFO_MSG("Information of the client: ~s~s", [exmpp_jid:to_binary(To), Values_string2]).
 
+=======
+do_client_version(disabled, _From, _To) -> ok;
+do_client_version(enabled, From, To) ->
+    ToS = jlib:jid_to_string(To),
+    Random_resource =
+	iolist_to_binary(integer_to_list(random:uniform(100000))),
+    From2 = From#jid{resource = Random_resource,
+		     lresource = Random_resource},
+    Packet = #xmlel{name = <<"iq">>,
+		    attrs = [{<<"to">>, ToS}, {<<"type">>, <<"get">>}],
+		    children =
+			[#xmlel{name = <<"query">>,
+				attrs = [{<<"xmlns">>, ?NS_VERSION}],
+				children = []}]},
+    ejabberd_router:route(From2, To, Packet),
+    Els = receive
+	    {route, To, From2, IQ} ->
+		#xmlel{name = <<"query">>, children = List} =
+		    xml:get_subtag(IQ, <<"query">>),
+		List
+	    after 5000 -> % Timeout in miliseconds: 5 seconds
+		      []
+	  end,
+    Values = [{Name, Value}
+	      || #xmlel{name = Name, attrs = [],
+			children = [{xmlcdata, Value}]}
+		     <- Els],
+    Values_string1 = [io_lib:format("~n~s: ~p", [N, V])
+		      || {N, V} <- Values],
+    Values_string2 = iolist_to_binary(Values_string1),
+    ?INFO_MSG("Information of the client: ~s~s",
+	      [ToS, Values_string2]).
+>>>>>>> upstream/master

@@ -5,7 +5,11 @@
 %%% Created :  7 May 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +21,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
 
@@ -31,6 +34,10 @@
 	 %% Server
 	 status/0, reopen_log/0,
 	 stop_kindly/2, send_service_message_all_mucs/2,
+<<<<<<< HEAD
+=======
+	 registered_vhosts/0,
+>>>>>>> upstream/master
 	 %% Erlang
 	 update_list/0, update/1,
 	 %% Accounts
@@ -44,6 +51,10 @@
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
+<<<<<<< HEAD
+=======
+	 export2odbc/2,
+>>>>>>> upstream/master
 	 set_master/1,
 	 backup_mnesia/1, restore_mnesia/1,
 	 dump_mnesia/1, dump_table/2, load_mnesia/1,
@@ -54,6 +65,7 @@
 	]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 -include("ejabberd_commands.hrl").
 
 start() ->
@@ -88,12 +100,19 @@ commands() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = stop_kindly, tags = [server],
 			desc = "Inform users and rooms, wait, and stop the server",
+<<<<<<< HEAD
+=======
+			longdesc = "Provide the delay in seconds, and the "
+			    "announcement quoted, for example: \n"
+			    "ejabberdctl stop_kindly 60 "
+			    "\\\"The server will stop in one minute.\\\"",
+>>>>>>> upstream/master
 			module = ?MODULE, function = stop_kindly,
 			args = [{delay, integer}, {announcement, string}],
 			result = {res, rescode}},
      #ejabberd_commands{name = get_loglevel, tags = [logs, server],
 			desc = "Get the current loglevel",
-			module = ejabberd_loglevel, function = get,
+			module = ejabberd_logger, function = get,
 			args = [],
                         result = {leveltuple, {tuple, [{levelnumber, integer},
                                                        {levelatom, atom},
@@ -114,18 +133,23 @@ commands() ->
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
 			module = ?MODULE, function = register,
-			args = [{user, string}, {host, string}, {password, string}],
+			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},
      #ejabberd_commands{name = unregister, tags = [accounts],
 			desc = "Unregister a user",
 			module = ?MODULE, function = unregister,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {res, restuple}},
      #ejabberd_commands{name = registered_users, tags = [accounts],
 			desc = "List all registered users in HOST",
 			module = ?MODULE, function = registered_users,
-			args = [{host, string}],
+			args = [{host, binary}],
 			result = {users, {list, {username, string}}}},
+	 #ejabberd_commands{name = registered_vhosts, tags = [server],
+			desc = "List all registered vhosts in SERVER",
+			module = ?MODULE, function = registered_vhosts,
+			args = [],
+			result = {vhosts, {list, {vhost, string}}}},
 
      #ejabberd_commands{name = gli, tags = [accounts],
 			desc = "Get information about last access of an account",
@@ -165,6 +189,17 @@ commands() ->
 			module = ejabberd_piefxis, function = export_host,
 			args = [{dir, string}, {host, string}], result = {res, rescode}},
 
+     #ejabberd_commands{name = export_odbc, tags = [mnesia, odbc],
+                        desc = "Export all tables as SQL queries to a file",
+                        module = ejd2odbc, function = export,
+                        args = [{host, string}, {file, string}], result = {res, rescode}},
+
+     #ejabberd_commands{name = convert_to_yaml, tags = [config],
+                        desc = "Convert the input file from Erlang to YAML format",
+                        module = ejabberd_config, function = convert_to_yaml,
+                        args = [{in, string}, {out, string}],
+                        result = {res, rescode}},
+
      #ejabberd_commands{name = delete_expired_messages, tags = [purge],
 			desc = "Delete expired offline messages from database",
 			module = ?MODULE, function = delete_expired_messages,
@@ -173,7 +208,21 @@ commands() ->
 			desc = "Delete offline messages older than DAYS",
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
+<<<<<<< HEAD
 
+=======
+	 
+     #ejabberd_commands{name = rename_default_nodeplugin, tags = [mnesia],
+			desc = "Update PubSub table from old ejabberd trunk SVN to 2.1.0",
+			module = mod_pubsub, function = rename_default_nodeplugin,
+			args = [], result = {res, rescode}},
+
+     #ejabberd_commands{name = export2odbc, tags = [mnesia],
+			desc = "Export virtual host information from Mnesia tables to SQL files",
+			module = ?MODULE, function = export2odbc,
+			args = [{host, string}, {directory, string}],
+			result = {res, rescode}},
+>>>>>>> upstream/master
      #ejabberd_commands{name = set_master, tags = [mnesia],
 			desc = "Set master node of the clustered Mnesia tables",
 			longdesc = "If you provide as nodename \"self\", this "
@@ -232,26 +281,79 @@ status() ->
 
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
-    %% TODO: Use the Reopen log API for logger_h ?
-    ejabberd_logger_h:reopen_log(),
-    case application:get_env(sasl,sasl_error_logger) of
-	{ok, {file, SASLfile}} ->
-	    error_logger:delete_report_handler(sasl_report_file_h),
-	    ejabberd_logger_h:rotate_log(SASLfile),
-	    error_logger:add_report_handler(sasl_report_file_h,
-	        {SASLfile, get_sasl_error_logger_type()});
-	_ -> false
-	end,
+    ejabberd_logger:reopen_log().
+
+%%%
+%%% Stop Kindly
+%%%
+
+stop_kindly(DelaySeconds, AnnouncementText) ->
+    Subject = io_lib:format("Server stop in ~p seconds!", [DelaySeconds]),
+    WaitingDesc = io_lib:format("Waiting ~p seconds", [DelaySeconds]),
+    Steps = [
+	     {"Stopping ejabberd port listeners",
+	      ejabberd_listener, stop_listeners, []},
+	     {"Sending announcement to connected users",
+	      mod_announce, send_announcement_to_all,
+	      [?MYNAME, Subject, AnnouncementText]},
+	     {"Sending service message to MUC rooms",
+	      ejabberd_admin, send_service_message_all_mucs,
+	      [Subject, AnnouncementText]},
+	     {WaitingDesc, timer, sleep, [DelaySeconds * 1000]},
+	     {"Stopping ejabberd", application, stop, [ejabberd]},
+	     {"Stopping Mnesia", mnesia, stop, []},
+	     {"Stopping Erlang node", init, stop, []}
+    ],
+    NumberLast = length(Steps),
+    TimestampStart = calendar:datetime_to_gregorian_seconds({date(), time()}),
+    lists:foldl(
+      fun({Desc, Mod, Func, Args}, NumberThis) ->
+	      SecondsDiff =
+		  calendar:datetime_to_gregorian_seconds({date(), time()})
+		  - TimestampStart,
+	      io:format("[~p/~p ~ps] ~s... ",
+			[NumberThis, NumberLast, SecondsDiff, Desc]),
+	      Result = (catch apply(Mod, Func, Args)),
+	      io:format("~p~n", [Result]),
+	      NumberThis+1
+      end,
+      1,
+      Steps),
     ok.
 
-%% Function copied from Erlang/OTP lib/sasl/src/sasl.erl which doesn't export it
-get_sasl_error_logger_type () ->
-    case application:get_env (sasl, errlog_type) of
-	{ok, error} -> error;
-	{ok, progress} -> progress;
-	{ok, all} -> all;
-	{ok, Bad} -> exit ({bad_config, {sasl, {errlog_type, Bad}}});
-	_ -> all
+send_service_message_all_mucs(Subject, AnnouncementText) ->
+    Message = list_to_binary(
+                io_lib:format("~s~n~s", [Subject, AnnouncementText])),
+    lists:foreach(
+      fun(ServerHost) ->
+	      MUCHost = gen_mod:get_module_opt_host(
+			  ServerHost, mod_muc, <<"conference.@HOST@">>),
+	      mod_muc:broadcast_service_message(MUCHost, Message)
+      end,
+      ?MYHOSTS).
+
+%%%
+%%% ejabberd_update
+%%%
+
+update_list() ->
+    {ok, _Dir, UpdatedBeams, _Script, _LowLevelScript, _Check} =
+	ejabberd_update:update_info(),
+    [atom_to_list(Beam) || Beam <- UpdatedBeams].
+
+update("all") ->
+    [update_module(ModStr) || ModStr <- update_list()],
+    {ok, []};
+update(ModStr) ->
+    update_module(ModStr).
+
+update_module(ModuleNameBin) when is_binary(ModuleNameBin) ->
+    update_module(binary_to_list(ModuleNameBin));
+update_module(ModuleNameString) ->
+    ModuleName = list_to_atom(ModuleNameString),
+    case ejabberd_update:update([ModuleName]) of
+          {ok, _Res} -> {ok, []};
+          {error, Reason} -> {error, Reason}
     end.
 
 %%%
@@ -351,12 +453,17 @@ registered_users(Host) ->
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 
+<<<<<<< HEAD
 get_last_info() -> get_last_info("badlop", "localhost").
 get_last_info(User, Server) ->
     case mod_last:get_last_info(User, Server) of
 	{ok, TimeStamp, Status} -> {TimeStamp, Status};
 	not_found -> {"never", ""}
     end.
+=======
+registered_vhosts() ->
+	?MYHOSTS.
+>>>>>>> upstream/master
 
 %%%
 %%% Migration management
@@ -388,6 +495,7 @@ import_dir(Path) ->
 %%%
 
 delete_expired_messages() ->
+<<<<<<< HEAD
     mod_offline:remove_expired_messages(),
     ok.
 
@@ -395,11 +503,43 @@ delete_old_messages(Days) ->
     mod_offline:remove_old_messages(Days),
     ok.
 
+=======
+    lists:foreach(
+      fun(Host) ->
+              {atomic, ok} = mod_offline:remove_expired_messages(Host)
+      end, ?MYHOSTS).
+
+delete_old_messages(Days) ->
+    lists:foreach(
+      fun(Host) ->
+              {atomic, _} = mod_offline:remove_old_messages(Days, Host)
+      end, ?MYHOSTS).
+>>>>>>> upstream/master
 
 %%%
 %%% Mnesia management
 %%%
 
+<<<<<<< HEAD
+=======
+export2odbc(Host, Directory) ->
+    Tables = [{export_last, last},
+              {export_offline, offline},
+              {export_private_storage, private_storage},
+              {export_roster, roster},
+              {export_vcard, vcard},
+              {export_vcard_search, vcard_search},
+              {export_passwd, passwd}],
+    Export = fun({TableFun, Table}) ->
+                     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
+                     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
+                     Res = (catch ejd2odbc:TableFun(Host, Filename)),
+                     io:format("  Result: ~p~n", [Res])
+             end,
+    lists:foreach(Export, Tables),
+    ok.
+
+>>>>>>> upstream/master
 set_master("self") ->
     set_master(node());
 set_master(NodeString) when is_list(NodeString) ->

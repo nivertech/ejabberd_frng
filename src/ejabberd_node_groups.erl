@@ -5,7 +5,11 @@
 %%% Created :  1 Nov 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +21,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -41,6 +44,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
+<<<<<<< HEAD
 -record(state, {groups = []}).
 
 -ifdef(SSL40).
@@ -48,6 +52,11 @@
 -else.
 -define(PG2, pg2_backport).
 -endif.
+=======
+-define(PG2, pg2).
+
+-record(state, {}).
+>>>>>>> upstream/master
 
 %%====================================================================
 %% API
@@ -97,8 +106,18 @@ get_closest_node(Name) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
+<<<<<<< HEAD
     Groups =
 	case ejabberd_config:get_local_option(node_type) of
+=======
+    {FE, BE} =
+	case ejabberd_config:get_option(
+               node_type,
+               fun(frontend) -> frontend;
+                  (backend) -> backend;
+                  (generic) -> generic
+               end, generic) of
+>>>>>>> upstream/master
 	    frontend ->
 		[frontend];
 	    backend ->

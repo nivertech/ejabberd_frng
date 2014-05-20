@@ -2,6 +2,18 @@
 # You can add personal rules in your file .git/info/exclude
 *.swp
 *~
+<<<<<<< HEAD
+=======
+\#*#
+.#*
+/Makefile
+/config.log
+/config.status
+/aclocal.m4
+/contrib/extract_translations/extract_translations.beam
+/*.cache
+/deps/
+>>>>>>> upstream/master
 /doc/*.aux
 /doc/*.haux
 /doc/*.html
@@ -15,6 +27,7 @@
 /doc/*.toc
 /doc/contributed_modules.tex
 /doc/version.tex
+<<<<<<< HEAD
 /src/*.beam
 /src/*.so
 /src/*.so.dSYM
@@ -36,3 +49,14 @@
 /src/eldap/ELDAPv3.hrl
 /src/eldap/eldap_filter_yecc.erl
 /src/epam
+=======
+/ebin/
+/ejabberd.init
+/ejabberdctl.example
+/include/XmppAddr.hrl
+/src/XmppAddr.asn1db
+/src/XmppAddr.erl
+/src/ejabberd.app.src
+/src/eldap_filter_yecc.erl
+/vars.config
+>>>>>>> upstream/master

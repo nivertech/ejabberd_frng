@@ -5,7 +5,11 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +21,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -176,6 +179,7 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
+<<<<<<< HEAD
     STUNSupervisor =
 	{ejabberd_stun_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -198,6 +202,8 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [cache_tab_sup]},
+=======
+>>>>>>> upstream/master
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
            GlobalRouter,
@@ -217,7 +223,6 @@ init([]) ->
 	   HTTPSupervisor,
 	   HTTPPollSupervisor,
 	   IQSupervisor,
-	   STUNSupervisor,
 	   FrontendSocketSupervisor,
 	   CacheTabSupervisor,
 	   Listener]}}.

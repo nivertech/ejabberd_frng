@@ -14,7 +14,11 @@
 %% AB. All Rights Reserved.''
 %% 
 %% The code has been modified and improved by ProcessOne.
+<<<<<<< HEAD
 %% Copyright 2007-2012, ProcessOne
+=======
+%% Copyright 2007-2014, ProcessOne
+>>>>>>> upstream/master
 %%
 %%  The change adds the following features:
 %%   - You can send exit(priority_shutdown) to the p1_fsm process to
@@ -27,6 +31,10 @@
 %%   process will be terminated.
 %%   - You might customize the State data before sending it to error_logger
 %%   in case of a crash (just export the function print_state/1)
+<<<<<<< HEAD
+=======
+%%     $Id$
+>>>>>>> upstream/master
 %%
 -module(p1_fsm).
 
@@ -125,8 +133,6 @@
 	 start_timer/2,send_event_after/2,cancel_timer/1,
 	 enter_loop/4, enter_loop/5, enter_loop/6, wake_hib/7]).
 
--export([behaviour_info/1]).
-
 %% Internal exports
 -export([init_it/6, print_event/3,
 	 system_continue/3,
@@ -138,17 +144,61 @@
 
 %%% Internal gen_fsm state
 %%% This state is used to defined resource control values:
--record(limits, {max_queue}).
+-record(limits, {max_queue :: non_neg_integer()}).
 
 %%% ---------------------------------------------------
 %%% Interface functions.
 %%% ---------------------------------------------------
 
+<<<<<<< HEAD
 behaviour_info(callbacks) ->
     [{init,1},{handle_event,3},{handle_sync_event,4},{handle_info,3},
      {terminate,3},{code_change,4}, {print_state,1}];
 behaviour_info(_Other) ->
     undefined.
+=======
+-callback init(Args :: term()) ->
+    {ok, StateName :: atom(), StateData :: term()} |
+    {ok, StateName :: atom(), StateData :: term(), timeout() | hibernate} |
+    {stop, Reason :: term()} | ignore.
+-callback handle_event(Event :: term(), StateName :: atom(),
+                       StateData :: term()) ->
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: term(), NewStateData :: term()}.
+-callback handle_sync_event(Event :: term(), From :: {pid(), Tag :: term()},
+                            StateName :: atom(), StateData :: term()) ->
+    {reply, Reply :: term(), NextStateName :: atom(), NewStateData :: term()} |
+    {reply, Reply :: term(), NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: term(), Reply :: term(), NewStateData :: term()} |
+    {stop, Reason :: term(), NewStateData :: term()}.
+-callback handle_info(Info :: term(), StateName :: atom(),
+                      StateData :: term()) ->
+    {next_state, NextStateName :: atom(), NewStateData :: term()} |
+    {next_state, NextStateName :: atom(), NewStateData :: term(),
+     timeout() | hibernate} |
+    {migrate, NewStateData :: term(),
+     {Node :: atom(), M :: atom(), F :: atom(), A :: list()},
+     Timeout :: timeout()} |
+    {stop, Reason :: normal | term(), NewStateData :: term()}.
+-callback terminate(Reason :: normal | shutdown | {shutdown, term()}
+                    | term(), StateName :: atom(), StateData :: term()) ->
+    term().
+-callback code_change(OldVsn :: term() | {down, term()}, StateName :: atom(),
+                      StateData :: term(), Extra :: term()) ->
+    {ok, NextStateName :: atom(), NewStateData :: term()}.
+>>>>>>> upstream/master
 
 %%% ---------------------------------------------------
 %%% Starts a generic state machine.
@@ -291,7 +341,7 @@ get_proc_name({local, Name}) ->
 	    exit(process_not_registered)
     end;
 get_proc_name({global, Name}) ->
-    case global:safe_whereis_name(Name) of
+    case global:whereis_name(Name) of
 	undefined ->
 	    exit(process_not_registered_globally);
 	Pid when Pid==self() ->
@@ -313,7 +363,7 @@ get_parent() ->
 name_to_pid(Name) ->
     case whereis(Name) of
 	undefined ->
-	    case global:safe_whereis_name(Name) of
+	    case global:whereis_name(Name) of
 		undefined ->
 		    exit(could_not_find_registerd_name);
 		Pid ->
@@ -455,7 +505,7 @@ decode_msg(Msg,Parent, Name, StateName, StateData, Mod, Time, Debug,
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Limits, Queue, QueueLen);
 	_Msg ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, StateName}, {in, Msg}),
 	    handle_msg(Msg, Parent, Name, StateName, StateData,
 		       Mod, Time, Debug1, Limits, Queue, QueueLen)
@@ -468,6 +518,8 @@ system_continue(Parent, Debug, [Name, StateName, StateData,
 				Mod, Time, Limits, Queue, QueueLen]) ->
     loop(Parent, Name, StateName, StateData, Mod, Time, Debug,
 	 Limits, Queue, QueueLen).
+
+-spec system_terminate(term(), _, _, [term(),...]) -> no_return().
 
 system_terminate(Reason, _Parent, Debug,
 		 [Name, StateName, StateData, Mod, _Time, _Limits]) ->
@@ -589,12 +641,12 @@ handle_msg(Msg, Parent, Name, StateName, StateData,
     From = from(Msg),
     case catch dispatch(Msg, Mod, StateName, StateData) of
 	{next_state, NStateName, NStateData} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, infinity, Debug1, Limits, Queue, QueueLen);
 	{next_state, NStateName, NStateData, Time1} ->
-	    Debug1 = sys:handle_debug(Debug, {?MODULE, print_event}, 
+	    Debug1 = sys:handle_debug(Debug, fun print_event/3,
 				      {Name, NStateName}, return),
 	    loop(Parent, Name, NStateName, NStateData,
 		 Mod, Time1, Debug1, Limits, Queue, QueueLen);
@@ -663,12 +715,14 @@ reply({To, Tag}, Reply) ->
 
 reply(Name, {To, Tag}, Reply, Debug, StateName) ->
     reply({To, Tag}, Reply),
-    sys:handle_debug(Debug, {?MODULE, print_event}, Name,
+    sys:handle_debug(Debug, fun print_event/3, Name,
 		     {out, Reply, To, StateName}).
 
 %%% ---------------------------------------------------
 %%% Terminate the server.
 %%% ---------------------------------------------------
+
+-spec terminate(term(), _, _, atom(), _, _, _) -> no_return().
 
 terminate(Reason, Name, Msg, Mod, StateName, StateData, Debug) ->
     case catch Mod:terminate(Reason, StateName, StateData) of
@@ -753,7 +807,7 @@ get_msg(Msg) -> Msg.
 %% Status information
 %%-----------------------------------------------------------------
 format_status(Opt, StatusData) ->
-    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time]] =
+    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time, _Limits, _Queue, _QueueLen]] =
 	StatusData,
     NameTag = if is_pid(Name) ->
 		      pid_to_list(Name);

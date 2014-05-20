@@ -5,7 +5,11 @@
 %%% Created :  8 Aug 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +21,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -55,6 +58,7 @@
 	 terminate/2]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 %% Timeout of 5 seconds in calls to distributed hooks
 -define(TIMEOUT_DISTRIBUTED_HOOK, 5000).
@@ -67,59 +71,85 @@
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
-%% @spec (Hook::atom(), Function::function(), Seq::integer()) -> ok
+-spec add(atom(), fun(), number()) -> any().
+
 %% @doc See add/4.
 add(Hook, Function, Seq) when is_function(Function) ->
     add(Hook, global, undefined, Function, Seq).
 
+-spec add(atom(), binary() | atom(), fun() | atom() , number()) -> any().
 add(Hook, Host, Function, Seq) when is_function(Function) ->
     add(Hook, Host, undefined, Function, Seq);
 
-%% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
 %% @doc Add a module and function to this hook.
 %% The integer sequence is used to sort the calls: low number is called before high number.
 add(Hook, Module, Function, Seq) ->
     add(Hook, global, Module, Function, Seq).
 
+<<<<<<< HEAD
 add(Hook, Host, Module, Function, Seq) 
      when is_binary(Host) orelse is_atom(Host) ->
+=======
+-spec add(atom(), binary() | global, atom(), atom() | fun(), number()) -> any().
+
+add(Hook, Host, Module, Function, Seq) ->
+>>>>>>> upstream/master
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
+
+-spec add_dist(atom(), atom(), atom(), atom() | fun(), number()) -> any().
 
 add_dist(Hook, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, global, Node, Module, Function, Seq}).
 
+-spec add_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> any().
+
 add_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Node, Module, Function, Seq}).
 
-%% @spec (Hook::atom(), Function::function(), Seq::integer()) -> ok
+-spec delete(atom(), fun(), number()) -> ok.
+
 %% @doc See del/4.
 delete(Hook, Function, Seq) when is_function(Function) ->
     delete(Hook, global, undefined, Function, Seq).
 
+-spec delete(atom(), binary() | atom(), atom() | fun(), number()) -> ok.
+
 delete(Hook, Host, Function, Seq) when is_function(Function) ->
     delete(Hook, Host, undefined, Function, Seq);
 
-%% @spec (Hook::atom(), Module::atom(), Function::atom(), Seq::integer()) -> ok
 %% @doc Delete a module and function from this hook.
 %% It is important to indicate exactly the same information than when the call was added.
 delete(Hook, Module, Function, Seq) ->
     delete(Hook, global, Module, Function, Seq).
 
+<<<<<<< HEAD
 delete(Hook, Host, Module, Function, Seq) 
      when is_binary(Host) orelse is_atom(Host) ->
+=======
+-spec delete(atom(), binary() | global, atom(), atom() | fun(), number()) -> ok.
+
+delete(Hook, Host, Module, Function, Seq) ->
+>>>>>>> upstream/master
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Module, Function, Seq}).
+
+-spec delete_dist(atom(), atom(), atom(), atom() | fun(), number()) -> ok.
 
 delete_dist(Hook, Node, Module, Function, Seq) ->
     delete_dist(Hook, global, Node, Module, Function, Seq).
 
+-spec delete_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> ok.
+
 delete_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Node, Module, Function, Seq}).
 
-%% @spec (Hook::atom(), Args) -> ok
+-spec run(atom(), list()) -> ok.
+
 %% @doc Run the calls of this hook in order, don't care about function results.
 %% If a call returns stop, no more calls are performed.
 run(Hook, Args) ->
     run(Hook, global, Args).
+
+-spec run(atom(), binary() | global, list()) -> ok.
 
 run(Hook, Host, Args) ->
     case get_registered_hooks_for(Hook, Host) of
@@ -129,7 +159,8 @@ run(Hook, Host, Args) ->
         run1(Ls, Hook, Args)
     end.
 
-%% @spec (Hook::atom(), Val, Args) -> Val | stopped | NewVal
+-spec run_fold(atom(), any(), list()) -> any().
+
 %% @doc Run the calls of this hook in order.
 %% The arguments passed to the function are: [Val | Args].
 %% The result of a call is used as Val for the next call.
@@ -138,8 +169,13 @@ run(Hook, Host, Args) ->
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
+<<<<<<< HEAD
 %% @spec (Hook::atom(), Host, Val, Args) -> Val | stopped | NewVal
 %% Host = global | binary()
+=======
+-spec run_fold(atom(), binary() | global, any(), list()) -> any().
+
+>>>>>>> upstream/master
 run_fold(Hook, Host, Val, Args) ->
     case get_registered_hooks_for(Hook, Host) of
     [] ->

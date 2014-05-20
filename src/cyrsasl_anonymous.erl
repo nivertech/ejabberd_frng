@@ -6,7 +6,11 @@
 %%% Created : 23 Aug 2005 by Magnus Henoch <henoch@dtek.chalmers.se>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -18,10 +22,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -33,15 +36,20 @@
 
 -behaviour(cyrsasl).
 
+<<<<<<< HEAD
 %% @type mechstate() = {state, Server}
 %%     Server = string().
 
 -record(state, {server}).
+=======
+-record(state, {server = <<"">> :: binary()}).
+>>>>>>> upstream/master
 
 %% @spec (Opts) -> true
 %%     Opts = term()
 
 start(_Opts) ->
+<<<<<<< HEAD
     cyrsasl:register_mechanism("ANONYMOUS", ?MODULE, plain),
     ok.
 
@@ -49,10 +57,17 @@ start(_Opts) ->
 
 stop() ->
     ok.
+=======
+    cyrsasl:register_mechanism(<<"ANONYMOUS">>, ?MODULE, plain),
+    ok.
+
+stop() -> ok.
+>>>>>>> upstream/master
 
 mech_new(#sasl_params{host=Host}) ->
     {ok, #state{server = Host}}.
 
+<<<<<<< HEAD
 %% @spec (State, ClientIn) -> Ok | Error
 %%     State = mechstate()
 %%     ClientIn = string()
@@ -73,4 +88,13 @@ mech_step(State, _ClientIn) ->
 	true  -> {error, 'not-authorized'};
 	false -> {ok, [{username, User},
 		       {auth_module, ejabberd_auth_anonymous}]}
+=======
+mech_step(#state{server = Server}, _ClientIn) ->
+    User = iolist_to_binary([randoms:get_string()
+			     | [jlib:integer_to_binary(X)
+				|| X <- tuple_to_list(now())]]),
+    case ejabberd_auth:is_user_exists(User, Server) of
+        true  -> {error, <<"not-authorized">>};
+        false -> {ok, [{username, User}, {auth_module, ejabberd_auth_anonymous}]}
+>>>>>>> upstream/master
     end.

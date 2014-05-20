@@ -5,7 +5,11 @@
 %%% Created : 17 Feb 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
+<<<<<<< HEAD
 %%% ejabberd, Copyright (C) 2002-2012   ProcessOne
+=======
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+>>>>>>> upstream/master
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +21,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -40,6 +43,7 @@
 
 
 %% Function used by ejabberd_auth:
+<<<<<<< HEAD
 -export([login/2,
 	 set_password/3,
 	 check_password/3,
@@ -53,11 +57,21 @@
 	 remove_user/2,
 	 remove_user/3,
 	 store_type/0,
+=======
+-export([login/2, set_password/3, check_password/3,
+	 check_password/5, try_register/3,
+	 dirty_get_registered_users/0, get_vh_registered_users/1,
+         get_vh_registered_users/2, get_vh_registered_users_number/1,
+         get_vh_registered_users_number/2, get_password_s/2,
+	 get_password/2, get_password/3, is_user_exists/2,
+	 remove_user/2, remove_user/3, store_type/0,
+>>>>>>> upstream/master
 	 plain_password_required/0]).
 
 -include_lib("exmpp/include/exmpp.hrl").
 
 -include("ejabberd.hrl").
+<<<<<<< HEAD
 -record(anonymous, {us, sid}).
 
 %% @spec (Host) -> ok
@@ -68,6 +82,18 @@
 
 start(Host) when is_list(Host) ->
     HostB = list_to_binary(Host),
+=======
+-include("logger.hrl").
+
+-include("jlib.hrl").
+
+%% Create the anonymous table if at least one virtual host has anonymous features enabled
+%% Register to login / logout events
+-record(anonymous, {us = {<<"">>, <<"">>} :: {binary(), binary()},
+                    sid = {now(), self()} :: ejabberd_sm:sid()}).
+
+start(Host) ->
+>>>>>>> upstream/master
     %% TODO: Check cluster mode
     update_tables(),
     mnesia:create_table(anonymous, [{ram_copies, [node()]},
@@ -104,6 +130,7 @@ allow_anonymous(Host) when is_list(Host) ->
 
 is_sasl_anonymous_enabled(Host) when is_list(Host) ->
     case allow_anonymous(Host) of
+<<<<<<< HEAD
 	false -> false;
 	true ->
 	    case anonymous_protocol(Host) of
@@ -111,6 +138,15 @@ is_sasl_anonymous_enabled(Host) when is_list(Host) ->
 		both      -> true;
 		_Other    -> false
 	    end
+=======
+      false -> false;
+      true ->
+	  case anonymous_protocol(Host) of
+	    sasl_anon -> true;
+	    both -> true;
+	    _Other -> false
+	  end
+>>>>>>> upstream/master
     end.
 
 %% @spec (Host) -> bool()
@@ -121,6 +157,7 @@ is_sasl_anonymous_enabled(Host) when is_list(Host) ->
 
 is_login_anonymous_enabled(Host) when is_list(Host) ->
     case allow_anonymous(Host) of
+<<<<<<< HEAD
 	false -> false;
 	true  ->
 	    case anonymous_protocol(Host) of
@@ -128,12 +165,22 @@ is_login_anonymous_enabled(Host) when is_list(Host) ->
 		both       -> true;
 		_Other     -> false
 	    end
+=======
+      false -> false;
+      true ->
+	  case anonymous_protocol(Host) of
+	    login_anon -> true;
+	    both -> true;
+	    _Other -> false
+	  end
+>>>>>>> upstream/master
     end.
 
 %% @spec (Host) -> sasl_anon | login_anon | both
 %%     Host = string()
 %% @doc Return the anonymous protocol to use: sasl_anon|login_anon|both.
 %% defaults to login_anon
+<<<<<<< HEAD
 
 anonymous_protocol(Host) when is_list(Host) ->
     case ejabberd_config:get_local_option({anonymous_protocol, Host}) of
@@ -142,12 +189,30 @@ anonymous_protocol(Host) when is_list(Host) ->
 	both       -> both;
 	_Other     -> sasl_anon
     end.
+=======
+anonymous_protocol(Host) ->
+    ejabberd_config:get_option(
+      {anonymous_protocol, Host},
+      fun(sasl_anon) -> sasl_anon;
+         (login_anon) -> login_anon;
+         (both) -> both
+      end,
+      sasl_anon).
+>>>>>>> upstream/master
 
 %% @spec (Host) -> bool()
 %%     Host = string()
 %% @doc Return true if multiple connections have been allowed in the
 %% config file.
 %% defaults to false
+<<<<<<< HEAD
+=======
+allow_multiple_connections(Host) ->
+    ejabberd_config:get_option(
+      {allow_multiple_connections, Host},
+      fun(V) when is_boolean(V) -> V end,
+      false).
+>>>>>>> upstream/master
 
 allow_multiple_connections(Host) when is_list(Host) ->
     ejabberd_config:get_local_option({allow_multiple_connections, Host})
@@ -179,6 +244,7 @@ anonymous_user_exist(User, Server) when is_binary(User), is_binary(Server) ->
 
 remove_connection(SID, LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
     US = {LUser, LServer},
+<<<<<<< HEAD
     F = fun() ->
 		mnesia:delete_object({anonymous, US, SID})
         end,
@@ -217,6 +283,33 @@ unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
     LServer = exmpp_jid:prep_domain(JID),
     purge_hook(anonymous_user_exist(LUser, LServer),
 	       LUser, LServer),
+=======
+    F = fun () -> mnesia:delete_object({anonymous, US, SID})
+	end,
+    mnesia:transaction(F).
+
+%% Register connection
+register_connection(SID,
+		    #jid{luser = LUser, lserver = LServer}, Info) ->
+    AuthModule = list_to_atom(binary_to_list(xml:get_attr_s(<<"auth_module">>, Info))),
+    case AuthModule == (?MODULE) of
+      true ->
+	  ejabberd_hooks:run(register_user, LServer,
+			     [LUser, LServer]),
+	  US = {LUser, LServer},
+	  mnesia:sync_dirty(fun () ->
+				     mnesia:write(#anonymous{us = US,
+							     sid = SID})
+			     end);
+      false -> ok
+    end.
+
+%% Remove an anonymous user from the anonymous users table
+unregister_connection(SID,
+		      #jid{luser = LUser, lserver = LServer}, _) ->
+    purge_hook(anonymous_user_exist(LUser, LServer), LUser,
+	       LServer),
+>>>>>>> upstream/master
     remove_connection(SID, LUser, LServer).
 
 %% @spec (bool(), LUser, LServer) -> term()
@@ -226,8 +319,14 @@ unregister_connection(SID, JID, _) when ?IS_JID(JID) ->
 
 purge_hook(false, _LUser, _LServer) ->
     ok;
+<<<<<<< HEAD
 purge_hook(true, LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
     ejabberd_hooks:run(anonymous_purge_hook, LServer, [LUser, LServer]).
+=======
+purge_hook(true, LUser, LServer) ->
+    ejabberd_hooks:run(anonymous_purge_hook, LServer,
+		       [LUser, LServer]).
+>>>>>>> upstream/master
 
 %% ---------------------------------
 %% Specific anonymous auth functions
@@ -241,6 +340,7 @@ purge_hook(true, LUser, LServer) when is_binary(LUser), is_binary(LServer) ->
 %% permenant users before allowing access.
 
 check_password(User, Server, Password) ->
+<<<<<<< HEAD
     check_password(User, Server, Password, undefined, undefined).
 check_password(User, Server, _Password, _Digest, _DigestGen) ->
     %% We refuse login for registered accounts (They cannot logged but
@@ -252,6 +352,22 @@ check_password(User, Server, _Password, _Digest, _DigestGen) ->
 	%% If we are not sure whether the user exists in other module, reject anon auth
 	maybe  -> false;
 	false -> login(User, Server)
+=======
+    check_password(User, Server, Password, undefined,
+		   undefined).
+
+check_password(User, Server, _Password, _Digest,
+	       _DigestGen) ->
+    case
+      ejabberd_auth:is_user_exists_in_other_modules(?MODULE,
+						    User, Server)
+	of
+      %% If user exists in other module, reject anonnymous authentication
+      true -> false;
+      %% If we are not sure whether the user exists in other module, reject anon auth
+      maybe -> false;
+      false -> login(User, Server)
+>>>>>>> upstream/master
     end.
 
 %% @spec (User, Server) -> bool()
@@ -260,16 +376,16 @@ check_password(User, Server, _Password, _Digest, _DigestGen) ->
 
 login(User, Server) ->
     case is_login_anonymous_enabled(Server) of
-	false -> false;
-	true  ->
-	    case anonymous_user_exist(User, Server) of
-		%% Reject the login if an anonymous user with the same login
-		%% is already logged and if multiple login has not been enable
-		%% in the config file.
-		true  -> allow_multiple_connections(Server);
-		%% Accept login and add user to the anonymous table
-		false -> true
-	    end
+      false -> false;
+      true ->
+	  case anonymous_user_exist(User, Server) of
+	    %% Reject the login if an anonymous user with the same login
+	    %% is already logged and if multiple login has not been enable
+	    %% in the config file.
+	    true -> allow_multiple_connections(Server);
+	    %% Accept login and add user to the anonymous table
+	    false -> true
+	  end
     end.
 
 %% @spec (User, Server, Password) -> ok | {error, not_allowed}
@@ -281,10 +397,8 @@ login(User, Server) ->
 
 set_password(User, Server, _Password) ->
     case anonymous_user_exist(User, Server) of
-	true ->
-	    ok;
-	false ->
-	    {error, not_allowed}
+      true -> ok;
+      false -> {error, not_allowed}
     end.
 
 %% @spec (User, Server, Password) -> {error, not_allowed}
@@ -297,6 +411,7 @@ set_password(User, Server, _Password) ->
 try_register(_User, _Server, _Password) ->
     {error, not_allowed}.
 
+<<<<<<< HEAD
 %% @spec () -> nil()
 
 dirty_get_registered_users() ->
@@ -313,9 +428,26 @@ get_vh_registered_users(Server) ->
 %%     Server = string()
 %%     Password = nil()
 %% @doc Return password of permanent user or false for anonymous users.
+=======
+dirty_get_registered_users() -> [].
+
+get_vh_registered_users(Server) ->
+    [{U, S}
+     || {U, S, _R}
+	    <- ejabberd_sm:get_vh_session_list(Server)].
+
+get_vh_registered_users(Server, _) ->
+    get_vh_registered_users(Server).
+
+get_vh_registered_users_number(Server) ->
+    length(get_vh_registered_users(Server)).
+
+get_vh_registered_users_number(Server, _) ->
+    get_vh_registered_users_number(Server).
+>>>>>>> upstream/master
 
 get_password(User, Server) ->
-    get_password(User, Server, "").
+    get_password(User, Server, <<"">>).
 
 %% @spec (User, Server, DefaultValue) -> DefaultValue | false
 %%     User = string()
@@ -323,13 +455,21 @@ get_password(User, Server) ->
 %%     DefaultValue = string()
 
 get_password(User, Server, DefaultValue) ->
-    case anonymous_user_exist(User, Server) or login(User, Server) of
-	%% We return the default value if the user is anonymous
-	true ->
-	    DefaultValue;
-	%% We return the permanent user password otherwise
-	false ->
-	    false
+    case anonymous_user_exist(User, Server) or
+	   login(User, Server)
+	of
+      %% We return the default value if the user is anonymous
+      true -> DefaultValue;
+      %% We return the permanent user password otherwise
+      false -> false
+    end.
+
+get_password_s(User, Server) ->
+    case get_password(User, Server) of
+        false ->
+            <<"">>;
+        Password ->
+            Password
     end.
 
 %% @spec (User, Server) -> bool()
@@ -341,6 +481,7 @@ get_password(User, Server, DefaultValue) ->
 is_user_exists(User, Server) ->
     anonymous_user_exist(User, Server).
 
+<<<<<<< HEAD
 %% @spec (User, Server) -> {error, not_allowed}
 %%     User = string()
 %%     Server = string()
@@ -371,3 +512,13 @@ update_tables() ->
 	_ ->
 	    ok
     end.
+=======
+remove_user(_User, _Server) -> {error, not_allowed}.
+
+remove_user(_User, _Server, _Password) -> not_allowed.
+
+plain_password_required() -> false.
+
+store_type() ->
+	plain.
+>>>>>>> upstream/master
